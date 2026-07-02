@@ -10,7 +10,6 @@ import {
   OAUTH_AUTHORIZE_URL,
   CLIENT_ID,
   SHORT_LINK_ENDPOINT,
-  ENABLE_SHORT_LINK,
 } from './constants.js';
 
 // Generate PKCE code_verifier (RFC 7636 Spec: 32 Byte random number base64url Encoded 43 Characters, Sufficient entropy)
@@ -99,22 +98,20 @@ export async function login(): Promise<void> {
   const resource = `${MCP_BASE_URL}`;
   const authUrl = `${OAUTH_AUTHORIZE_URL}?response_type=code&client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}&code_challenge=${encodeURIComponent(codeChallenge)}&code_challenge_method=S256&scope=${encodeURIComponent(scope)}&resource=${encodeURIComponent(resource)}&prompt=consent`;
 
-  // 4. Get short link (if ENABLE_SHORT_LINK=true)
+  // 4. Get short link
   let shortUrl = authUrl;
-  if (ENABLE_SHORT_LINK) {
-    try {
-      const shortResponse = await fetch(`${OAUTH_SERVER_URL}${SHORT_LINK_ENDPOINT}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: authUrl }),
-      });
-      if (shortResponse.ok) {
-        const { shortUrl: url } = (await shortResponse.json()) as { shortUrl: string };
-        shortUrl = url;
-      }
-    } catch {
-      // Short link service unavailable, fallback to long link
+  try {
+    const shortResponse = await fetch(`${OAUTH_SERVER_URL}${SHORT_LINK_ENDPOINT}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: authUrl }),
+    });
+    if (shortResponse.ok) {
+      const { shortUrl: url } = (await shortResponse.json()) as { shortUrl: string };
+      shortUrl = url;
     }
+  } catch {
+    // Short link service unavailable, fallback to long link
   }
 
   // 5. Show auth guide

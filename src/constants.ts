@@ -47,11 +47,7 @@ export const OAUTH_ENDPOINTS = {
 
 export const SHORT_LINK_ENDPOINT = '/s/shorten';
 
-/**
- * Enable short link service (Overseas edition defaults to false, configurable via env var ENABLE_SHORT_LINK=true)
- * CN edition defaults to true. Overseas edition can enable on demand when the proxy service is stable.
- */
-export const ENABLE_SHORT_LINK = process.env.ENABLE_SHORT_LINK === 'true';
+
 
 // ==================== Place types ====================
 
