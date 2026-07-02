@@ -1,7 +1,7 @@
 import { loadToken } from './auth.js';
 import { MCP_BASE_URL, API_ENDPOINTS } from './constants.js';
 
-// 通用请求函数
+// General request function
 async function request(
   method: string,
   endpoint: string,
@@ -9,7 +9,7 @@ async function request(
 ): Promise<unknown> {
   const token = loadToken();
   if (!token?.access_token) {
-    throw new Error('未登录，请先执行 rgh login');
+    throw new Error('Not logged in. Please run "rgg login" first.');
   }
 
   const headers: Record<string, string> = {
@@ -29,18 +29,18 @@ async function request(
 
   if (!response.ok) {
     const body = await response.text();
-    throw new Error(`API 请求失败 (${response.status}): ${body}`);
+    throw new Error(`API Request Failed (${response.status}): ${body}`);
   }
 
   return response.json();
 }
 
-// 1. 获取搜索标签
+// 1. Get search tags
 export async function getHotelSearchTags(): Promise<any> {
   return request('GET', API_ENDPOINTS.HOTEL_TAGS);
 }
 
-// 2. 搜索酒店
+// 2. Search hotels
 export async function searchHotels(params: {
   originQuery: string;
   place: string;
@@ -65,7 +65,7 @@ export async function searchHotels(params: {
   return request('POST', API_ENDPOINTS.HOTEL_SEARCH, params);
 }
 
-// 3. 获取酒店详情
+// 3. GetHotel detail
 export async function getHotelDetail(params: {
   hotelId?: number;
   name?: string;
@@ -87,7 +87,7 @@ export async function getHotelDetail(params: {
   return request('POST', API_ENDPOINTS.HOTEL_DETAIL, params);
 }
 
-// 4. 价格确认
+// 4. Price confirm
 export async function hotelPriceConfirm(params: {
   hotelID: number;
   ratePlanID: string;
@@ -110,7 +110,7 @@ export async function hotelPriceConfirm(params: {
   return request('POST', API_ENDPOINTS.PRICE_CONFIRM, params);
 }
 
-// 5. 创建订单
+// 5. Create booking
 export async function createHotelBooking(params: {
   referenceNo: string;
   contact: {
@@ -131,7 +131,7 @@ export async function createHotelBooking(params: {
   return request('POST', API_ENDPOINTS.HOTEL_BOOK, params);
 }
 
-// 6. 查询订单列表
+// 6. Search orders list
 export async function searchHotelOrders(): Promise<any> {
   return request('GET', API_ENDPOINTS.HOTEL_ORDERS);
 }

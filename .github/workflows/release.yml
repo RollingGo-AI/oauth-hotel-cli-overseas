@@ -3,11 +3,11 @@ name: Build and Release Executables
 on:
   push:
     tags:
-      - 'v*' # 当推送 v 打头的 tag 时自动触发打包并发布
-  workflow_dispatch: # 允许在 GitHub 网页端手动触发打包
+      - 'v*' # Trigger build and release on tags starting with v
+  workflow_dispatch: # Allow manual trigger on GitHub UI
 
 permissions:
-  contents: write # 允许 Action 创建 Release
+  contents: write # Allow Action to create Release
 
 jobs:
   build:
@@ -40,20 +40,20 @@ jobs:
 
       - name: Compile Executables
         run: |
-          # 使用 Bun 原生支持，将 Node.js ESM 代码秒级编译为多平台单文件
-          bun build ./dist/index.js --compile --target bun-windows-x64 --outfile rgh-windows.exe
-          bun build ./dist/index.js --compile --target bun-darwin-x64 --outfile rgh-macos
-          bun build ./dist/index.js --compile --target bun-darwin-arm64 --outfile rgh-macos-arm64
-          bun build ./dist/index.js --compile --target bun-linux-x64 --outfile rgh-linux
+          # Use Bun to compile Node.js ESM to multi-platform single-file executables
+          bun build ./dist/index.js --compile --target bun-windows-x64 --outfile rgg-windows.exe
+          bun build ./dist/index.js --compile --target bun-darwin-x64 --outfile rgg-macos
+          bun build ./dist/index.js --compile --target bun-darwin-arm64 --outfile rgg-macos-arm64
+          bun build ./dist/index.js --compile --target bun-linux-x64 --outfile rgg-linux
 
       - name: Release to GitHub
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/') # 只有推送 tag 时才真正创建 Release
+        if: startsWith(github.ref, 'refs/tags/') # Only create release when a tag is pushed
         with:
           files: |
-            rgh-windows.exe
-            rgh-macos
-            rgh-macos-arm64
-            rgh-linux
+            rgg-windows.exe
+            rgg-macos
+            rgg-macos-arm64
+            rgg-linux
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -15,84 +15,85 @@ import { DEFAULTS, PLACE_TYPES } from './constants.js';
 import { checkForUpdates } from './version-check.js';
 import pkg from '../package.json' with { type: 'json' };
 
-// 执行版本检查
+// Execute version check
 await checkForUpdates();
 
 const program = new Command();
 
 program
-  .name('rgh')
-  .description('RollingGo 酒店 CLI 工具 - OAuth 登录 + 酒店预订全流程')
+  .name('rgg')
+  .description('RollingGo Hotel CLI - OAuth Login & Booking Workflow')
   .version(pkg.version);
 
-// ==================== 认证命令 ====================
+// ==================== Auth Commands ====================
 
 program
   .command('login')
-  .description('OAuth 登录')
+  .description('OAuth Login')
   .action(async () => {
     try {
       await login();
     } catch (error: any) {
-      console.error('❌ 登录失败:', error.message);
+      console.error('Login failed:', error.message);
       process.exit(1);
     }
   });
 
 program
   .command('logout')
-  .description('退出登录')
+  .description('Log out')
   .action(() => {
     logout();
   });
 
 program
   .command('whoami')
-  .description('查看当前登录状态')
+  .description('Check current login status')
   .action(() => {
     if (isLoggedIn()) {
       const token = loadToken();
-      console.log('✅ 已登录');
+      console.log('Logged in');
       if (token?.user) {
-        console.log(`   用户: ${token.user}`);
+        console.log(`   User: ${token.user}`);
       }
     } else {
-      console.log('❌ 未登录，请先执行 rgh login');
+      console.log('Not logged in. Please run "rgg login" first.');
     }
   });
 
-// ==================== 酒店工具命令 ====================
+// ==================== Hotel Commands ====================
 
-// 1. 获取搜索标签
+// 1. Get search tags
 program
   .command('hotel-tags')
-  .description('获取所有可用的酒店搜索标签')
+  .description('Get all available hotel search tags')
   .action(async () => {
     try {
       const result = await getHotelSearchTags();
       console.log(JSON.stringify(result, null, 2));
     } catch (error: any) {
-      console.error('❌ 获取标签失败:', error.message);
+      console.error('Failed to get tags:', error.message);
       process.exit(1);
     }
   });
 
-// 2. 搜索酒店
+// 2. Search hotels
 program
   .command('search-hotels')
-  .description('搜索酒店')
-  .requiredOption('--origin-query <query>', '用户原始查询语句')
-  .requiredOption('--place <place>', '地点名称')
-  .requiredOption('--place-type <type>', `地点类型：${PLACE_TYPES.join('/')}`)
-  .option('--country-code <code>', '国家代码')
-  .option('--size <n>', '返回数量', String(DEFAULTS.SIZE))
-  .option('--check-in-date <date>', '入住日期 YYYY-MM-DD')
-  .option('--stay-nights <n>', '入住晚数', String(DEFAULTS.STAY_NIGHTS))
-  .option('--adult-count <n>', '每间房成人数', String(DEFAULTS.ADULT_COUNT))
-  .option('--star-ratings <min,max>', '星级范围')
-  .option('--distance-in-meter <m>', '距离限制（米）')
-  .option('--required-tag <tag>', '必须标签（可多次使用）')
-  .option('--max-price-per-night <price>', '每晚最高价格')
+  .description('Search hotels')
+  .requiredOption('--origin-query <query>', 'Original user query')
+  .requiredOption('--place <place>', 'Place name')
+  .requiredOption('--place-type <type>', `Place type: ${PLACE_TYPES.join('/')}`)
+  .option('--country-code <code>', 'Country code')
+  .option('--size <n>', 'Response size', String(DEFAULTS.SIZE))
+  .option('--check-in-date <date>', 'Check-in date YYYY-MM-DD')
+  .option('--stay-nights <n>', 'Stay nights', String(DEFAULTS.STAY_NIGHTS))
+  .option('--adult-count <n>', 'Adults per room', String(DEFAULTS.ADULT_COUNT))
+  .option('--star-ratings <min,max>', 'Star ratings range (e.g. 3,5)')
+  .option('--distance-in-meter <m>', 'Distance limit (meters)')
+  .option('--required-tag <tag>', 'Required tag (can be used multiple times)')
+  .option('--preferred-brand <brand>', 'Preferred brand (can be used multiple times)')
+  .option('--max-price-per-night <price>', 'Max price per night')
   .action(async (options) => {
     try {
       const params: any = {
@@ -120,45 +121,52 @@ program
         if (options.distanceInMeter) params.filterOptions.distanceInMeter = parseInt(options.distanceInMeter);
       }
 
-      // 收集 requiredTags（支持多次使用）
+      // Collect requiredTags and preferredBrands (support multiple)
       const requiredTags = options.requiredTag
         ? Array.isArray(options.requiredTag)
           ? options.requiredTag
           : [options.requiredTag]
         : [];
 
-      if (requiredTags.length || options.maxPricePerNight) {
+      const preferredBrands = options.preferredBrand
+        ? Array.isArray(options.preferredBrand)
+          ? options.preferredBrand
+          : [options.preferredBrand]
+        : [];
+
+      if (requiredTags.length || preferredBrands.length || options.maxPricePerNight) {
         params.hotelTags = {};
         if (requiredTags.length) params.hotelTags.requiredTags = requiredTags;
+        if (preferredBrands.length) params.hotelTags.preferredBrands = preferredBrands;
         if (options.maxPricePerNight) params.hotelTags.maxPricePerNight = parseFloat(options.maxPricePerNight);
       }
 
       const result = await searchHotels(params);
       console.log(JSON.stringify(result, null, 2));
     } catch (error: any) {
-      console.error('❌ 搜索失败:', error.message);
+      console.error('Search failed:', error.message);
       process.exit(1);
     }
   });
 
-// 3. 酒店详情
+// 3. Hotel detail
 program
   .command('hotel-detail')
-  .description('查询酒店详情与房型报价')
-  .option('--hotel-id <id>', '酒店 ID')
-  .option('--name <name>', '酒店名称（模糊匹配）')
-  .option('--check-in-date <date>', '入住日期 YYYY-MM-DD')
-  .option('--check-out-date <date>', '离店日期 YYYY-MM-DD')
-  .option('--room-count <n>', '房间数', String(DEFAULTS.ROOM_COUNT))
-  .option('--adult-count <n>', '每间房成人数', String(DEFAULTS.ADULT_COUNT))
-  .option('--child-count <n>', '每间房儿童数', String(DEFAULTS.CHILD_COUNT))
-  .option('--child-age <ages>', '儿童年龄（逗号分隔）')
-  .option('--country-code <code>', '国家代码', DEFAULTS.COUNTRY_CODE)
-  .option('--currency <currency>', '币种', DEFAULTS.CURRENCY)
+  .description('Query hotel details and room rates')
+  .option('--hotel-id <id>', 'Hotel ID')
+  .option('--name <name>', 'Hotel name (fuzzy match)')
+  .option('--check-in-date <date>', 'Check-in date YYYY-MM-DD')
+  .option('--check-out-date <date>', 'Check-out date YYYY-MM-DD')
+  .option('--room-count <n>', 'Room count', String(DEFAULTS.ROOM_COUNT))
+  .option('--adult-count <n>', 'Adults per room', String(DEFAULTS.ADULT_COUNT))
+  .option('--child-count <n>', 'Children per room', String(DEFAULTS.CHILD_COUNT))
+  .option('--child-age <ages>', 'Child ages (comma separated)')
+  .option('--country-code <code>', 'Country code', DEFAULTS.COUNTRY_CODE)
+  .option('--currency <currency>', 'Currency', DEFAULTS.CURRENCY)
   .action(async (options) => {
     try {
       if (!options.hotelId && !options.name) {
-        console.error('❌ 请提供 --hotel-id 或 --name');
+        console.error('Please provide --hotel-id or --name');
         process.exit(1);
       }
 
@@ -190,25 +198,25 @@ program
       const result = await getHotelDetail(params);
       console.log(JSON.stringify(result, null, 2));
     } catch (error: any) {
-      console.error('❌ 获取详情失败:', error.message);
+      console.error('Failed to get hotel details:', error.message);
       process.exit(1);
     }
   });
 
-// 4. 价格确认
+// 4. Price confirm
 program
   .command('price-confirm')
-  .description('锁定房型实时价格')
-  .requiredOption('--hotel-id <id>', '酒店 ID')
-  .requiredOption('--rate-plan-id <id>', '价格方案 ID')
-  .requiredOption('--rooms <n>', '房间数量')
-  .requiredOption('--check-in-date <date>', '入住日期 YYYY-MM-DD')
-  .requiredOption('--check-out-date <date>', '离店日期 YYYY-MM-DD')
-  .requiredOption('--adults <n>', '每间房成人数')
-  .option('--children <n>', '每间房儿童数', String(DEFAULTS.CHILD_COUNT))
-  .option('--child-age <ages>', '儿童年龄（逗号分隔）')
-  .option('--nationality <code>', '国籍代码', DEFAULTS.NATIONALITY)
-  .option('--currency <currency>', '币种', DEFAULTS.CURRENCY)
+  .description('Lock real-time room price')
+  .requiredOption('--hotel-id <id>', 'Hotel ID')
+  .requiredOption('--rate-plan-id <id>', 'Rate plan ID')
+  .requiredOption('--rooms <n>', 'Number of rooms')
+  .requiredOption('--check-in-date <date>', 'Check-in date YYYY-MM-DD')
+  .requiredOption('--check-out-date <date>', 'Check-out date YYYY-MM-DD')
+  .requiredOption('--adults <n>', 'Adults per room')
+  .option('--children <n>', 'Children per room', String(DEFAULTS.CHILD_COUNT))
+  .option('--child-age <ages>', 'Child ages (comma separated)')
+  .option('--nationality <code>', 'Nationality code', DEFAULTS.NATIONALITY)
+  .option('--currency <currency>', 'Currency', DEFAULTS.CURRENCY)
   .action(async (options) => {
     try {
       const numOfRooms = parseInt(options.rooms);
@@ -244,19 +252,20 @@ program
       });
       console.log(JSON.stringify(result, null, 2));
     } catch (error: any) {
-      console.error('❌ 价格确认失败:', error.message);
+      console.error('Price confirmation failed:', error.message);
       process.exit(1);
     }
   });
 
-// 5. 创建订单
+// 5. Create booking
 program
   .command('book')
-  .description('创建酒店订单')
-  .requiredOption('--reference-no <no>', '预订参考号')
-  .requiredOption('--first-name <name>', '联系人名')
-  .requiredOption('--last-name <name>', '联系人姓')
-  .option('--guests <json>', '客人信息 JSON')
+  .description('Create hotel booking')
+  .requiredOption('--reference-no <no>', 'Booking reference number')
+  .requiredOption('--first-name <name>', 'Contact first name')
+  .requiredOption('--last-name <name>', 'Contact last name')
+  .option('--guests <json>', 'Guest info JSON')
+  .option('--customer-request <request>', 'Special customer requests')
   .action(async (options) => {
     try {
 
@@ -264,7 +273,7 @@ program
       if (options.guests) {
         guestList = JSON.parse(options.guests);
       } else {
-        // 默认：联系人作为唯一客人
+        // Default: Contact as the only guest
         guestList = [
           {
             roomNum: 1,
@@ -279,46 +288,52 @@ program
         ];
       }
 
-      const result = await createHotelBooking({
+      const bookingParams: any = {
         referenceNo: options.referenceNo,
         contact: {
           firstName: options.firstName,
           lastName: options.lastName,
         },
         guestList,
-      });
+      };
+
+      if (options.customerRequest) {
+        bookingParams.customerRequest = options.customerRequest;
+      }
+
+      const result = await createHotelBooking(bookingParams);
       console.log(JSON.stringify(result, null, 2));
     } catch (error: any) {
-      console.error('❌ 下单失败:', error.message);
+      console.error('Booking failed:', error.message);
       process.exit(1);
     }
   });
 
-// 6. 查询订单
+// 6. Search orders
 program
   .command('orders')
-  .description('查询订单列表')
+  .description('Search orders list')
   .action(async () => {
     try {
       const result = await searchHotelOrders();
       console.log(JSON.stringify(result, null, 2));
     } catch (error: any) {
-      console.error('❌ 查询订单失败:', error.message);
+      console.error('Failed to query orders:', error.message);
       process.exit(1);
     }
   });
 
-// 7. 更新 CLI
+// 7. Update CLI
 program
   .command('update')
-  .description('更新 CLI 工具到最新版本')
+  .description('Update CLI to latest version')
   .action(() => {
     try {
-      console.log('🔄 正在更新 @rollinggo/hotel-global 到最新版本...');
+      console.log('Updating @rollinggo/hotel-global to latest version...');
       execSync('npm install -g @rollinggo/hotel-global@latest', { stdio: 'inherit' });
-      console.log('✅ 更新成功！');
+      console.log('Updated successfully!');
     } catch (error: any) {
-      console.error('❌ 更新失败:', error.message);
+      console.error('Update failed:', error.message);
       process.exit(1);
     }
   });

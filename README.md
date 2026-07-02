@@ -1,92 +1,67 @@
-# @rollinggo/hotel
+# @rollinggo/hotel-global
 
-RollingGo 酒店 CLI 工具，支持 OAuth 登录和完整的酒店预订流程。
+RollingGo Hotel CLI - OAuth login and hotel booking workflow for global users.
 
-## 安装
+## Support
 
-```bash
-# 直接使用（推荐）
-npx @rollinggo/hotel@latest login
+- OAuth 2.0 Login via short link or QR code.
+- Full hotel booking workflow (Search -> Detail -> Price Confirm -> Book).
+- Direct MCP integration.
 
-# 全局安装
-npm install -g @rollinggo/hotel
-rgh login
-```
+## Installation
 
-## 命令
-
-### 认证
+We recommend installing globally:
 
 ```bash
-rgh login      # OAuth 登录
-rgh logout     # 退出登录
-rgh whoami     # 查看登录状态
+npm install -g @rollinggo/hotel-global@latest
 ```
 
-### 酒店工具
+## Authentication
 
+### 1. Login
 ```bash
-# 获取搜索标签
-rgh hotel-tags
+rgg login
+```
+Follow the console instructions to either scan the QR code or click the URL to authorize.
 
-# 搜索酒店
-rgh search-hotels \
-  --origin-query "杭州西湖附近酒店" \
-  --place "西湖" \
-  --place-type "景点" \
-  --check-in-date 2026-06-10 \
-  --size 5
-
-# 酒店详情
-rgh hotel-detail \
-  --hotel-id 1109562 \
-  --check-in-date 2026-06-10 \
-  --check-out-date 2026-06-11
-
-# 价格确认
-rgh price-confirm \
-  --hotel-id 1109562 \
-  --rate-plan-id "xxx" \
-  --rooms 1 \
-  --check-in-date 2026-06-10 \
-  --check-out-date 2026-06-11 \
-  --adults 2
-
-# 创建订单
-rgh book \
-  --reference-no "xxx" \
-  --first-name "Shan" \
-  --last-name "Zhang" \
-  --email "test@example.com"
-
-# 查询订单
-rgh orders
+### 2. Log out
+```bash
+rgg logout
 ```
 
-## 参数说明
+### 3. Check login status
+```bash
+rgg whoami
+```
 
-### search-hotels
+## Hotel Commands
 
-| 参数 | 必填 | 说明 |
-|------|------|------|
-| `--origin-query` | ✅ | 用户原始查询语句 |
-| `--place` | ✅ | 地点名称 |
-| `--place-type` | ✅ | 地点类型：城市/机场/景点/火车站/地铁站/酒店/区/县/详细地址 |
-| `--check-in-date` | ❌ | 入住日期 YYYY-MM-DD |
-| `--stay-nights` | ❌ | 入住晚数 |
-| `--adult-count` | ❌ | 每间房成人数 |
-| `--star-ratings` | ❌ | 星级范围，如 4.5,5.0 |
-| `--size` | ❌ | 返回数量，默认 5 |
+### 1. Get search tags
+```bash
+rgg hotel-tags
+```
 
-### hotel-detail
+### 2. Search hotels
+```bash
+rgg search-hotels --origin-query "hotels near West Lake" --place "West Lake" --place-type attraction
+```
 
-| 参数 | 必填 | 说明 |
-|------|------|------|
-| `--hotel-id` | 二选一 | 酒店 ID |
-| `--name` | 二选一 | 酒店名称 |
-| `--check-in-date` | ❌ | 入住日期 |
-| `--check-out-date` | ❌ | 离店日期 |
+### 3. Hotel detail
+```bash
+rgg hotel-detail --hotel-id 12345 --check-in-date 2026-08-01 --check-out-date 2026-08-03
+```
 
-## License
+### 4. Price confirm
+```bash
+rgg price-confirm --hotel-id 12345 --rate-plan-id "RP001" --rooms 1 --check-in-date 2026-08-01 --check-out-date 2026-08-03 --adults 2
+```
 
-ISC
+### 5. Create booking
+```bash
+rgg book --reference-no "REF12345" --first-name "John" --last-name "Doe" --customer-request "Late check-in"
+```
+
+### 6. Search orders
+```bash
+rgg orders
+```

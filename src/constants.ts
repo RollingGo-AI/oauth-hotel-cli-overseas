@@ -1,108 +1,108 @@
 import * as dotenv from 'dotenv';
 dotenv.config();
 
-// ==================== API 地址 ====================
+// ==================== API URLs ====================
 
-/** MCP 服务器地址 */
+/** MCP Base URL */
 export const MCP_BASE_URL = process.env.MCP_BASE_URL || 'https://mcp.rollinggo.ai/mcp';
 
-/** OAuth 中转服务器地址 */
+/** OAuth Proxy server URL */
 export const OAUTH_SERVER_URL = process.env.OAUTH_SERVER_URL || 'https://rollinggo.store';
 
-/** OAuth 授权页面地址 */
+/** OAuth Auth page URL */
 export const OAUTH_AUTHORIZE_URL = process.env.OAUTH_AUTHORIZE_URL || 'https://api.rollinggo.ai/oauth2/authorize';
 
 /** OAuth Client ID */
 export const CLIENT_ID = process.env.CLIENT_ID || 'rollinggo-global';
 
-// ==================== API 端点 ====================
+// ==================== API Endpoints ====================
 
 export const API_ENDPOINTS = {
-  /** 获取搜索标签 */
+  /** Get search tags */
   HOTEL_TAGS: '/hoteltags',
-  /** 搜索酒店 */
+  /** Search hotels */
   HOTEL_SEARCH: '/hotelsearch',
-  /** 酒店详情 */
+  /** Hotel detail */
   HOTEL_DETAIL: '/hoteldetail',
-  /** 价格确认 */
+  /** Price confirm */
   PRICE_CONFIRM: '/hotelpriceconfirm',
-  /** 创建订单 */
+  /** Create booking */
   HOTEL_BOOK: '/hotelbook',
-  /** 查询订单 */
+  /** Search orders */
   HOTEL_ORDERS: '/hotelorders',
 } as const;
 
-// ==================== OAuth 端点 ====================
+// ==================== OAuth Endpoints ====================
 
 export const OAUTH_ENDPOINTS = {
-  /** 获取 state */
+  /** Get state */
   INIT: '/skill/oauth/init',
-  /** OAuth 回调（海外版专用路径，对应 rollinggo-global client） */
+  /** OAuth Callback (Overseas edition path, maps to rollinggo-global client) */
   CALLBACK: '/global-skill/oauth/callback',
-  /** 获取 token */
+  /** Get token */
   TOKEN: '/skill/oauth/token',
 } as const;
 
-// ==================== 短链接端点 ====================
+// ==================== Short link endpoint ====================
 
 export const SHORT_LINK_ENDPOINT = '/s/shorten';
 
 /**
- * 是否启用短链接服务（海外版默认关闭，可通过环境变量 ENABLE_SHORT_LINK=true 开启）
- * 国内版因短链域名已知可用，默认开启；海外版待服务稳定后可按需开启
+ * Enable short link service (Overseas edition defaults to false, configurable via env var ENABLE_SHORT_LINK=true)
+ * CN edition defaults to true. Overseas edition can enable on demand when the proxy service is stable.
  */
 export const ENABLE_SHORT_LINK = process.env.ENABLE_SHORT_LINK === 'true';
 
-// ==================== 地点类型 ====================
+// ==================== Place types ====================
 
 export const PLACE_TYPES = [
-  '城市',
-  '机场',
-  '景点',
-  '火车站',
-  '地铁站',
-  '酒店',
-  '区/县',
-  '详细地址',
+  'City',
+  'Airport',
+  'Attraction',
+  'Train station',
+  'Metro station',
+  'Hotel',
+  'District/County',
+  'Detailed address',
 ] as const;
 
 export type PlaceType = (typeof PLACE_TYPES)[number];
 
-// ==================== 默认值 ====================
+// ==================== Default values ====================
 
 export const DEFAULTS = {
-  /** 默认返回数量 */
+  /** Default response size */
   SIZE: 5,
-  /** 最大返回数量 */
+  /** Max response size */
   MAX_SIZE: 20,
-  /** 默认入住晚数 */
+  /** Default stay nights */
   STAY_NIGHTS: 1,
-  /** 默认成人数 */
+  /** Default adult count */
   ADULT_COUNT: 2,
-  /** 默认儿童数 */
+  /** Default child count */
   CHILD_COUNT: 0,
-  /** 默认房间数 */
+  /** Default room count */
   ROOM_COUNT: 1,
-  /** 默认国家代码 */
+  /** Default country code */
   COUNTRY_CODE: 'US',
-  /** 默认币种 */
+  /** Default currency */
   CURRENCY: 'USD',
-  /** 默认国籍 */
+  /** Default nationality */
   NATIONALITY: 'US',
 } as const;
 
-// ==================== OAuth 配置 ====================
+// ==================== OAuth Config ====================
 
 export const OAUTH_CONFIG = {
-  /** 本地回调端口 */
+  /** Local callback port */
   LOCAL_PORT: 18900,
-  /** PKCE code_verifier 长度 */
+  /** PKCE code_verifier length */
   CODE_VERIFIER_LENGTH: 128,
-  /** State 过期时间（分钟） */
+  /** State expiration time (minutes) */
   STATE_EXPIRY_MINUTES: 10,
 } as const;
 
-// ==================== Token 存储 ====================
+// ==================== Token Storage ====================
 
 export const TOKEN_PATH = process.env.HOME
   ? `${process.env.HOME}/.hotel-global-cli/token.json`

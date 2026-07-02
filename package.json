@@ -1,15 +1,23 @@
 {
   "name": "@rollinggo/hotel-global",
   "version": "1.0.0",
-  "description": "RollingGo 酒店 CLI 工具 - OAuth 登录 + 酒店预订全流程",
+  "description": "RollingGo Hotel CLI - OAuth login and hotel booking workflow for global users",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "rgh": "./dist/index.js"
+    "rgg": "./dist/index.js"
   },
   "files": [
     "dist"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RollingGo-AI/oauth-hotel-cli-overseas.git"
+  },
+  "bugs": {
+    "url": "https://github.com/RollingGo-AI/oauth-hotel-cli-overseas/issues"
+  },
+  "homepage": "https://github.com/RollingGo-AI/oauth-hotel-cli-overseas#readme",
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
@@ -24,7 +32,7 @@
     "oauth",
     "rollinggo"
   ],
-  "author": "",
+  "author": "RollingGo Team",
   "license": "ISC",
   "publishConfig": {
     "access": "public"
