@@ -50,14 +50,14 @@ export const SHORT_LINK_ENDPOINT = '/s/shorten';
 // ==================== Place types ====================
 
 export const PLACE_TYPES = [
-  'City',
-  'Airport',
-  'Attraction',
-  'Train station',
-  'Metro station',
-  'Hotel',
-  'District/County',
-  'Detailed address',
+  'city',
+  'airport',
+  'point_of_interest',
+  'train_station',
+  'subway_station',
+  'hotel',
+  'district/county',
+  'detailed address',
 ] as const;
 
 export type PlaceType = (typeof PLACE_TYPES)[number];
