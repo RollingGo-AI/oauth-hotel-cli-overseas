@@ -131,7 +131,20 @@ export async function createHotelBooking(params: {
   return request('POST', API_ENDPOINTS.HOTEL_BOOK, params);
 }
 
-// 6. Search orders list
-export async function searchHotelOrders(): Promise<any> {
-  return request('GET', API_ENDPOINTS.HOTEL_ORDERS);
+// 6. Search orders
+export async function searchHotelOrders(params?: {
+  status?: string;
+  dateRange?: {
+    startDate?: string;
+    endDate?: string;
+  };
+}): Promise<any> {
+  return request('POST', API_ENDPOINTS.HOTEL_ORDERS, params || {});
+}
+
+// 7. Get hotel order detail
+export async function getHotelOrderDetail(params: {
+  orderNo: string;
+}): Promise<any> {
+  return request('POST', API_ENDPOINTS.HOTEL_ORDER_DETAIL, params);
 }

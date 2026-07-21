@@ -28,6 +28,8 @@ export const API_ENDPOINTS = {
   HOTEL_BOOK: '/hotelbook',
   /** Search orders */
   HOTEL_ORDERS: '/hotelorders',
+  /** Order detail */
+  HOTEL_ORDER_DETAIL: '/hotelorderdetail',
 } as const;
 
 // ==================== OAuth Endpoints ====================

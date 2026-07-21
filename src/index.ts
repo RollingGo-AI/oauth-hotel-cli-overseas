@@ -1,5 +1,45 @@
 #!/usr/bin/env node
+import dotenv from 'dotenv';
+import path from 'node:path';
+import os from 'node:os';
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
+// Helper function to search for .env files upwards
+function findEnvUpwards(startDir: string): string | null {
+  let dir = path.resolve(startDir);
+  while (true) {
+    const envPath = path.join(dir, '.env');
+    if (fs.existsSync(envPath) && fs.statSync(envPath).isFile()) {
+      return envPath;
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) {
+      break;
+    }
+    dir = parent;
+  }
+  return null;
+}
+
+// 1. Search upwards from the current working directory (CWD)
+const cwdEnv = findEnvUpwards(process.cwd());
+if (cwdEnv) {
+  dotenv.config({ path: cwdEnv });
+}
+
+// 2. Search upwards from the CLI script location (supports bundled Skills)
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+const scriptEnv = findEnvUpwards(scriptDir);
+if (scriptEnv && scriptEnv !== cwdEnv) {
+  dotenv.config({ path: scriptEnv });
+}
+
+// 3. Load from the global home config directory (~/.hotel-global-cli/.env)
+const globalEnvPath = path.join(os.homedir(), '.hotel-global-cli', '.env');
+if (fs.existsSync(globalEnvPath)) {
+  dotenv.config({ path: globalEnvPath });
+}
 import { Command } from 'commander';
 import { execSync } from 'child_process';
 import { login, logout, isLoggedIn, loadToken } from './auth.js';
@@ -10,6 +50,7 @@ import {
   hotelPriceConfirm,
   createHotelBooking,
   searchHotelOrders,
+  getHotelOrderDetail,
 } from './api.js';
 import { DEFAULTS, PLACE_TYPES } from './constants.js';
 import { checkForUpdates } from './version-check.js';
@@ -257,21 +298,46 @@ program
     }
   });
 
+function parseGuestList(value: string, previous: any[]) {
+  const parts = value.split(',');
+  const roomNum = parseInt(parts[0], 10) || 1;
+  const firstName = parts[1] || '';
+  const lastName = parts[2] || '';
+  const isAdult = parts[3] ? parts[3].toLowerCase() !== 'false' : true;
+  
+  let room = previous.find((r: any) => r.roomNum === roomNum);
+  if (!room) {
+    room = { roomNum, guestInfo: [] };
+    previous.push(room);
+  }
+  room.guestInfo.push({ firstName, lastName, isAdult });
+  return previous;
+}
+
 // 5. Create booking
 program
   .command('book')
   .description('Create hotel booking')
   .requiredOption('--reference-no <no>', 'Booking reference number')
-  .requiredOption('--first-name <name>', 'Contact first name')
-  .requiredOption('--last-name <name>', 'Contact last name')
-  .option('--guests <json>', 'Guest info JSON')
+  .option('--first-name <name>', 'Contact first name (optional, defaults to first guest)')
+  .option('--last-name <name>', 'Contact last name (optional, defaults to first guest)')
+  .option('--guest <info>', 'Guest info: roomNum,firstName,lastName,isAdult (e.g. 1,San,Zhang,true)', parseGuestList, [])
   .option('--customer-request <request>', 'Special customer requests')
   .action(async (options) => {
     try {
 
-      let guestList;
-      if (options.guests) {
-        guestList = JSON.parse(options.guests);
+      let guestList = options.guest;
+      let contactFirstName = options.firstName;
+      let contactLastName = options.lastName;
+
+      if (!contactFirstName && (!guestList || guestList.length === 0)) {
+        console.error('Booking failed: Must provide --first-name/--last-name or at least one --guest');
+        process.exit(1);
+      }
+
+      if (guestList && guestList.length > 0) {
+        if (!contactFirstName) contactFirstName = guestList[0].guestInfo[0].firstName;
+        if (!contactLastName) contactLastName = guestList[0].guestInfo[0].lastName;
       } else {
         // Default: Contact as the only guest
         guestList = [
@@ -279,8 +345,8 @@ program
             roomNum: 1,
             guestInfo: [
               {
-                firstName: options.firstName,
-                lastName: options.lastName,
+                firstName: contactFirstName,
+                lastName: contactLastName,
                 isAdult: true,
               },
             ],
@@ -291,8 +357,8 @@ program
       const bookingParams: any = {
         referenceNo: options.referenceNo,
         contact: {
-          firstName: options.firstName,
-          lastName: options.lastName,
+          firstName: contactFirstName,
+          lastName: contactLastName,
         },
         guestList,
       };
@@ -313,9 +379,20 @@ program
 program
   .command('orders')
   .description('Search orders list')
-  .action(async () => {
+  .option('-s, --status <status>', 'Order status filter (ALL, PENDING, FINISHED)')
+  .option('--start-date <date>', 'Start date (YYYY-MM-DD)')
+  .option('--end-date <date>', 'End date (YYYY-MM-DD)')
+  .action(async (options) => {
     try {
-      const result = await searchHotelOrders();
+      const params: any = {};
+      if (options.status) params.status = options.status;
+      if (options.startDate || options.endDate) {
+        params.dateRange = {};
+        if (options.startDate) params.dateRange.startDate = options.startDate;
+        if (options.endDate) params.dateRange.endDate = options.endDate;
+      }
+      
+      const result = await searchHotelOrders(Object.keys(params).length > 0 ? params : undefined);
       console.log(JSON.stringify(result, null, 2));
     } catch (error: any) {
       console.error('Failed to query orders:', error.message);
@@ -323,7 +400,62 @@ program
     }
   });
 
-// 7. Update CLI
+// 7. Get order detail
+program
+  .command('order-detail <orderNo>')
+  .description('Get hotel order detail')
+  .action(async (orderNo) => {
+    try {
+      const result = await getHotelOrderDetail({ orderNo });
+      console.log(JSON.stringify(result, null, 2));
+    } catch (error: any) {
+      console.error('Failed to query order detail:', error.message);
+      process.exit(1);
+    }
+  });
+
+// 8. Initialize configuration
+program
+  .command('init')
+  .description('Initialize configuration (Auto-generate and merge global .env file in home directory for MCP and OAuth server URLs)')
+  .option('--mcp-base-url <url>', 'MCP Base URL')
+  .option('--oauth-server-url <url>', 'OAuth Server URL')
+  .option('--oauth-authorize-url <url>', 'OAuth Authorize URL')
+  .option('--client-id <id>', 'Client ID')
+  .action((options) => {
+    try {
+      const configDir = path.join(os.homedir(), '.hotel-global-cli');
+      const envPath = path.join(configDir, '.env');
+      if (!fs.existsSync(configDir)) {
+        fs.mkdirSync(configDir, { recursive: true });
+      }
+      
+      let existingEnv: Record<string, string> = {};
+      if (fs.existsSync(envPath)) {
+         existingEnv = dotenv.parse(fs.readFileSync(envPath, 'utf8'));
+      }
+      
+      const newEnv = {
+        ...existingEnv,
+        ...(options.mcpBaseUrl && { MCP_BASE_URL: options.mcpBaseUrl }),
+        ...(options.oauthServerUrl && { OAUTH_SERVER_URL: options.oauthServerUrl }),
+        ...(options.oauthAuthorizeUrl && { OAUTH_AUTHORIZE_URL: options.oauthAuthorizeUrl }),
+        ...(options.clientId && { CLIENT_ID: options.clientId }),
+      };
+
+      const envContent = Object.entries(newEnv)
+        .map(([k, v]) => `${k}=${v}`)
+        .join('\n') + '\n';
+        
+      fs.writeFileSync(envPath, envContent, 'utf8');
+      console.log(`Configuration saved to: ${envPath}`);
+    } catch (error: any) {
+      console.error('Initialization failed:', error.message);
+      process.exit(1);
+    }
+  });
+
+// 9. Update CLI
 program
   .command('update')
   .description('Update CLI to latest version')
