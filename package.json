@@ -1,6 +1,6 @@
 {
   "name": "@rollinggo/hotel-global",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "RollingGo Hotel CLI - OAuth login and hotel booking workflow for global users",
   "type": "module",
   "main": "dist/index.js",
