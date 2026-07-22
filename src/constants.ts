@@ -2,16 +2,16 @@
 // ==================== API URLs ====================
 
 /** MCP Base URL */
-export const MCP_BASE_URL = process.env.MCP_BASE_URL || 'https://mcp.rollinggo.ai/mcp';
+export const getMcpBaseUrl = () => process.env.MCP_BASE_URL || 'https://mcp.rollinggo.ai/mcp';
 
 /** OAuth Proxy server URL */
-export const OAUTH_SERVER_URL = process.env.OAUTH_SERVER_URL || 'https://rollinggo.store';
+export const getOauthServerUrl = () => process.env.OAUTH_SERVER_URL || 'https://rollinggo.store';
 
 /** OAuth Auth page URL */
-export const OAUTH_AUTHORIZE_URL = process.env.OAUTH_AUTHORIZE_URL || 'https://api.rollinggo.ai/oauth2/authorize';
+export const getOauthAuthorizeUrl = () => process.env.OAUTH_AUTHORIZE_URL || 'https://api.rollinggo.ai/oauth2/authorize';
 
 /** OAuth Client ID */
-export const CLIENT_ID = process.env.CLIENT_ID || 'rollinggo-global';
+export const getClientId = () => process.env.CLIENT_ID || 'rollinggo-global';
 
 // ==================== API Endpoints ====================
 
