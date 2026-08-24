@@ -79,12 +79,10 @@ export const DEFAULTS = {
   CHILD_COUNT: 0,
   /** Default room count */
   ROOM_COUNT: 1,
-  /** Default country code */
-  COUNTRY_CODE: 'US',
   /** Default currency */
   CURRENCY: 'USD',
-  /** Default nationality */
-  NATIONALITY: 'US',
+  /** Default language */
+  LANGUAGE: 'en',
 } as const;
 
 // ==================== OAuth Config ====================

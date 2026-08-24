@@ -125,7 +125,6 @@ program
   .requiredOption('--origin-query <query>', 'Original user query')
   .requiredOption('--place <place>', 'Place name')
   .requiredOption('--place-type <type>', `Place type: ${PLACE_TYPES.join('/')}`)
-  .option('--country-code <code>', 'Country code')
   .option('--size <n>', 'Response size', String(DEFAULTS.SIZE))
   .option('--check-in-date <date>', 'Check-in date YYYY-MM-DD')
   .option('--stay-nights <n>', 'Stay nights', String(DEFAULTS.STAY_NIGHTS))
@@ -135,6 +134,8 @@ program
   .option('--required-tag <tag>', 'Required tag (can be used multiple times)')
   .option('--preferred-brand <brand>', 'Preferred brand (can be used multiple times)')
   .option('--max-price-per-night <price>', 'Max price per night')
+  .option('--currency <currency>', 'Currency code (USD, EUR, JPY, etc.)', DEFAULTS.CURRENCY)
+  .option('--language <language>', 'Language code (zh, ja, en)', DEFAULTS.LANGUAGE)
   .action(async (options) => {
     try {
       const params: any = {
@@ -143,7 +144,6 @@ program
         placeType: options.placeType,
       };
 
-      if (options.countryCode) params.countryCode = options.countryCode;
       if (options.size) params.size = parseInt(options.size);
 
       if (options.checkInDate || options.stayNights || options.adultCount) {
@@ -182,6 +182,12 @@ program
         if (options.maxPricePerNight) params.hotelTags.maxPricePerNight = parseFloat(options.maxPricePerNight);
       }
 
+      if (options.currency || options.language) {
+        params.localeParam = {};
+        if (options.currency) params.localeParam.currency = options.currency;
+        if (options.language) params.localeParam.language = options.language;
+      }
+
       const result = await searchHotels(params);
       console.log(JSON.stringify(result, null, 2));
     } catch (error: any) {
@@ -202,8 +208,10 @@ program
   .option('--adult-count <n>', 'Adults per room', String(DEFAULTS.ADULT_COUNT))
   .option('--child-count <n>', 'Children per room', String(DEFAULTS.CHILD_COUNT))
   .option('--child-age <ages>', 'Child ages (comma separated)')
-  .option('--country-code <code>', 'Country code', DEFAULTS.COUNTRY_CODE)
   .option('--currency <currency>', 'Currency', DEFAULTS.CURRENCY)
+  .option('--language <language>', 'Language code (zh, ja, en)', DEFAULTS.LANGUAGE)
+  .option('--cancel-policy <policy>', 'Cancellation policy: CANCELABLE / NON_CANCELABLE')
+  .option('--meal-type <type>', 'Meal type: WITH_BREAKFAST / SINGLE_BREAKFAST / DOUBLE_BREAKFAST / NO_MEAL')
   .action(async (options) => {
     try {
       if (!options.hotelId && !options.name) {
@@ -231,10 +239,17 @@ program
         params.occupancyParam.childAgeDetails = options.childAge.split(',').map(Number);
       }
 
-      params.localeParam = {
-        countryCode: options.countryCode,
-        currency: options.currency,
-      };
+      if (options.cancelPolicy || options.mealType) {
+        params.filter = {};
+        if (options.cancelPolicy) params.filter.cancelPolicy = options.cancelPolicy;
+        if (options.mealType) params.filter.mealType = options.mealType;
+      }
+
+      if (options.currency || options.language) {
+        params.localeParam = {};
+        if (options.currency) params.localeParam.currency = options.currency;
+        if (options.language) params.localeParam.language = options.language;
+      }
 
       const result = await getHotelDetail(params);
       console.log(JSON.stringify(result, null, 2));
@@ -256,8 +271,8 @@ program
   .requiredOption('--adults <n>', 'Adults per room')
   .option('--children <n>', 'Children per room', String(DEFAULTS.CHILD_COUNT))
   .option('--child-age <ages>', 'Child ages (comma separated)')
-  .option('--nationality <code>', 'Nationality code', DEFAULTS.NATIONALITY)
   .option('--currency <currency>', 'Currency', DEFAULTS.CURRENCY)
+  .option('--language <language>', 'Language code (zh, ja, en)', DEFAULTS.LANGUAGE)
   .action(async (options) => {
     try {
       const numOfRooms = parseInt(options.rooms);
@@ -277,6 +292,10 @@ program
         occupancyDetails.push(detail);
       }
 
+      const localeParam: any = {};
+      if (options.currency) localeParam.currency = options.currency;
+      if (options.language) localeParam.language = options.language;
+
       const result = await hotelPriceConfirm({
         hotelID: parseInt(options.hotelId),
         ratePlanID: options.ratePlanId,
@@ -286,10 +305,7 @@ program
           checkOutDate: options.checkOutDate,
         },
         occupancyDetails,
-        localeParam: {
-          nationality: options.nationality,
-          currency: options.currency,
-        },
+        localeParam: Object.keys(localeParam).length > 0 ? localeParam : undefined,
       });
       console.log(JSON.stringify(result, null, 2));
     } catch (error: any) {
