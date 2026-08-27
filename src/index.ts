@@ -88,8 +88,9 @@ program
   });
 
 program
-  .command('whoami')
-  .description('Check current login status')
+  .command('status')
+  .aliases(['whoami', 'me'])
+  .description('Check current login status (aliases: whoami, me)')
   .action(() => {
     if (isLoggedIn()) {
       const token = loadToken();
