@@ -30,6 +30,10 @@ export const API_ENDPOINTS = {
   HOTEL_ORDERS: '/hotelorders',
   /** Order detail */
   HOTEL_ORDER_DETAIL: '/hotelorderdetail',
+  /** Pre-cancel booking (query penalty and get confirmId) */
+  HOTEL_PRE_CANCEL: '/hotelprecancel',
+  /** Confirm cancel booking */
+  HOTEL_CONFIRM_CANCEL: '/hotelcancelconfirm',
 } as const;
 
 // ==================== OAuth Endpoints ====================

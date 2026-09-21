@@ -155,3 +155,20 @@ export async function getHotelOrderDetail(params: {
 }): Promise<any> {
   return request('POST', API_ENDPOINTS.HOTEL_ORDER_DETAIL, params);
 }
+
+// 8. Pre-cancel hotel booking (query penalty & get 10-min confirmId)
+export async function preCancelHotelBooking(params: {
+  orderNo: string;
+}): Promise<any> {
+  return request('POST', API_ENDPOINTS.HOTEL_PRE_CANCEL, params);
+}
+
+// 9. Confirm and execute final cancellation
+export async function confirmCancelHotelBooking(params: {
+  orderNo: string;
+  bookingId: string;
+  confirmId: string;
+  description?: string;
+}): Promise<any> {
+  return request('POST', API_ENDPOINTS.HOTEL_CONFIRM_CANCEL, params);
+}

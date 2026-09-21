@@ -51,6 +51,8 @@ import {
   createHotelBooking,
   searchHotelOrders,
   getHotelOrderDetail,
+  preCancelHotelBooking,
+  confirmCancelHotelBooking,
 } from './api.js';
 import { DEFAULTS, PLACE_TYPES } from './constants.js';
 import { checkForUpdates } from './version-check.js';
@@ -431,7 +433,59 @@ program
     }
   });
 
-// 8. Initialize configuration
+// 8. Pre-cancel booking (query penalty & get 10-min confirmId)
+program
+  .command('pre-cancel [orderNo]')
+  .aliases(['hotel-pre-cancel', 'precancel'])
+  .description('Pre-cancel hotel booking (query penalty fee and obtain 10-minute confirmId)')
+  .option('--order-no <orderNo>', 'Order number')
+  .action(async (orderNoArg, options) => {
+    try {
+      const orderNo = orderNoArg || options.orderNo;
+      if (!orderNo) {
+        console.error('Pre-cancel failed: Must provide order number (e.g. rgg pre-cancel <orderNo> or --order-no <orderNo>)');
+        process.exit(1);
+      }
+      const result = await preCancelHotelBooking({ orderNo });
+      console.log(JSON.stringify(result, null, 2));
+    } catch (error: any) {
+      console.error('Pre-cancel failed:', error.message);
+      process.exit(1);
+    }
+  });
+
+// 9. Confirm cancel booking
+program
+  .command('confirm-cancel')
+  .aliases(['hotel-confirm-cancel', 'cancel'])
+  .description('Confirm and execute hotel booking cancellation (irreversible, requires confirmId from pre-cancel)')
+  .option('--order-no <orderNo>', 'Order number')
+  .option('--booking-id <bookingId>', 'Booking ID (returned by pre-cancel)')
+  .option('--confirm-id <confirmId>', 'Confirmation ID (returned by pre-cancel, valid for 10 min)')
+  .option('--description <description>', 'Optional cancellation reason or remark')
+  .action(async (options) => {
+    try {
+      if (!options.orderNo || !options.bookingId || !options.confirmId) {
+        console.error('Confirm cancel failed: Must provide --order-no, --booking-id, and --confirm-id');
+        process.exit(1);
+      }
+      const params: any = {
+        orderNo: options.orderNo,
+        bookingId: options.bookingId,
+        confirmId: options.confirmId,
+      };
+      if (options.description) {
+        params.description = options.description;
+      }
+      const result = await confirmCancelHotelBooking(params);
+      console.log(JSON.stringify(result, null, 2));
+    } catch (error: any) {
+      console.error('Confirm cancel failed:', error.message);
+      process.exit(1);
+    }
+  });
+
+// 10. Initialize configuration
 program
   .command('init')
   .description('Initialize configuration (Auto-generate and merge global .env file in home directory for MCP and OAuth server URLs)')
