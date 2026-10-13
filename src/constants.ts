@@ -5,7 +5,13 @@
 export const getMcpBaseUrl = () => process.env.MCP_BASE_URL || 'https://mcp.rollinggo.ai/mcp';
 
 /** OAuth Proxy server URL */
-export const getOauthServerUrl = () => process.env.OAUTH_SERVER_URL || 'https://rollinggo.store';
+export const getOauthServerUrl = () => {
+  const url = process.env.OAUTH_SERVER_URL;
+  if (url && /https?:\/\/rollinggo\.store\/?$/i.test(url.trim())) {
+    return 'https://api.rollinggo.store';
+  }
+  return url || 'https://api.rollinggo.store';
+};
 
 /** OAuth Auth page URL */
 export const getOauthAuthorizeUrl = () => process.env.OAUTH_AUTHORIZE_URL || 'https://api.rollinggo.ai/oauth2/authorize';

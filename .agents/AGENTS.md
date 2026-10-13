@@ -27,7 +27,7 @@ RollingGo Hotel CLI (Global edition) — `@rollinggo/hotel-global`, binary `rgg`
 
 ## Env vars (load order: system > CWD upward > script dir upward [Skill dir] > global home)
 
-`MCP_BASE_URL`, `OAUTH_SERVER_URL` (default `https://rollinggo.store` proxy), `OAUTH_AUTHORIZE_URL`, `CLIENT_ID`. Defaults are hardcoded in `constants.ts`. The `init` command writes `~/.hotel-global-cli/.env`.
+`MCP_BASE_URL`, `OAUTH_SERVER_URL` (default `https://api.rollinggo.store` proxy), `OAUTH_AUTHORIZE_URL`, `CLIENT_ID`. Defaults are hardcoded in `constants.ts`. The `init` command writes `~/.hotel-global-cli/.env`.
 
 ## Commands
 

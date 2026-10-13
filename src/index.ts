@@ -38,6 +38,15 @@ if (scriptEnv && scriptEnv !== cwdEnv) {
 // 3. Load from the global home config directory (~/.hotel-global-cli/.env)
 const globalEnvPath = path.join(os.homedir(), '.hotel-global-cli', '.env');
 if (fs.existsSync(globalEnvPath)) {
+  try {
+    const raw = fs.readFileSync(globalEnvPath, 'utf8');
+    if (/https?:\/\/rollinggo\.store/i.test(raw)) {
+      const updated = raw.replace(/https?:\/\/rollinggo\.store/gi, 'https://api.rollinggo.store');
+      fs.writeFileSync(globalEnvPath, updated, 'utf8');
+    }
+  } catch {
+    // Ignore read/write error
+  }
   dotenv.config({ path: globalEnvPath });
 }
 import { Command } from 'commander';
@@ -534,6 +543,12 @@ program
     try {
       console.log('Updating @rollinggo/hotel-global to latest version...');
       execSync('npm install -g @rollinggo/hotel-global@latest', { stdio: 'inherit' });
+      try {
+        const cacheFile = path.join(os.homedir(), '.hotel-global-cli', '.version-cache.json');
+        if (fs.existsSync(cacheFile)) {
+          fs.unlinkSync(cacheFile);
+        }
+      } catch {}
       console.log('Updated successfully!');
     } catch (error: any) {
       console.error('Update failed:', error.message);

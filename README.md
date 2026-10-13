@@ -45,7 +45,7 @@ The CLI automatically searches for and loads `.env` configuration files in the f
 MCP_BASE_URL=https://mcp.rollinggo.cn/mcp
 
 # OAuth Proxy Server URL
-OAUTH_SERVER_URL=https://rollinggo.store
+OAUTH_SERVER_URL=https://api.rollinggo.store
 
 # OAuth Authorization Page URL
 OAUTH_AUTHORIZE_URL=https://api.rollinggo.cn/oauth2/authorize
