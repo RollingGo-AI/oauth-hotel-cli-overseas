@@ -1,4 +1,27 @@
 
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// Recursively search upwards for specific filenames (e.g. client_id.txt or .client_id)
+function findFileUpwards(startDir: string, filenames: string[]): string | null {
+  try {
+    let dir = path.resolve(startDir);
+    while (true) {
+      for (const name of filenames) {
+        const target = path.join(dir, name);
+        if (fs.existsSync(target) && fs.statSync(target).isFile()) {
+          return target;
+        }
+      }
+      const parent = path.dirname(dir);
+      if (parent === dir) break;
+      dir = parent;
+    }
+  } catch {}
+  return null;
+}
+
 // ==================== API URLs ====================
 
 /** MCP Base URL */
@@ -16,8 +39,47 @@ export const getOauthServerUrl = () => {
 /** OAuth Auth page URL */
 export const getOauthAuthorizeUrl = () => process.env.OAUTH_AUTHORIZE_URL || 'https://api.rollinggo.ai/oauth2/authorize';
 
-/** OAuth Client ID */
-export const getClientId = () => process.env.CLIENT_ID || 'rollinggoglobal';
+/**
+ * OAuth Client ID Tiered Resolution:
+ * 1. CLI explicit argument (--client-id)
+ * 2. CWD and parent directories client_id.txt or .client_id
+ * 3. Script directory and parent directories client_id.txt or .client_id
+ * 4. Environment variable process.env.CLIENT_ID (including ~/.hotel-global-cli/.env)
+ * 5. Default built-in: 'rollinggoglobal'
+ */
+export const getClientId = (cliOverride?: string): string => {
+  // Priority 1: CLI explicit argument
+  if (cliOverride && cliOverride.trim()) {
+    return cliOverride.trim();
+  }
+
+  // Priority 2: CWD search upwards for client_id.txt / .client_id
+  const cwdFile = findFileUpwards(process.cwd(), ['client_id.txt', '.client_id']);
+  if (cwdFile) {
+    try {
+      const content = fs.readFileSync(cwdFile, 'utf8').trim();
+      if (content) return content;
+    } catch {}
+  }
+
+  // Priority 3: Script directory search upwards
+  try {
+    const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+    const scriptFile = findFileUpwards(scriptDir, ['client_id.txt', '.client_id']);
+    if (scriptFile && scriptFile !== cwdFile) {
+      const content = fs.readFileSync(scriptFile, 'utf8').trim();
+      if (content) return content;
+    }
+  } catch {}
+
+  // Priority 4: Environment variable / .env
+  if (process.env.CLIENT_ID && process.env.CLIENT_ID.trim()) {
+    return process.env.CLIENT_ID.trim();
+  }
+
+  // Priority 5: Default built-in
+  return 'rollinggoglobal';
+};
 
 // ==================== API Endpoints ====================
 

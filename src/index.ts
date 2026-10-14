@@ -82,9 +82,10 @@ program
 program
   .command('login')
   .description('OAuth Login')
-  .action(async () => {
+  .option('-c, --client-id <id>', 'Specify client ID for partner customization')
+  .action(async (options) => {
     try {
-      await login();
+      await login(options.clientId);
     } catch (error: any) {
       console.error('Login failed:', error.message);
       process.exit(1);

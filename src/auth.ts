@@ -62,11 +62,43 @@ export function logout(): void {
   }
 }
 
+// Save effective clientId to local global configuration (~/.hotel-global-cli/.env)
+export function saveClientId(clientId: string): void {
+  try {
+    const configDir = path.dirname(TOKEN_PATH);
+    const envPath = path.join(configDir, '.env');
+    if (!fs.existsSync(configDir)) {
+      fs.mkdirSync(configDir, { recursive: true });
+    }
+    const existingEnv: Record<string, string> = {};
+    if (fs.existsSync(envPath)) {
+      const raw = fs.readFileSync(envPath, 'utf8');
+      raw.split('\n').forEach((line) => {
+        const trimmed = line.trim();
+        if (trimmed && !trimmed.startsWith('#')) {
+          const idx = trimmed.indexOf('=');
+          if (idx !== -1) {
+            existingEnv[trimmed.slice(0, idx).trim()] = trimmed.slice(idx + 1).trim();
+          }
+        }
+      });
+    }
+    existingEnv['CLIENT_ID'] = clientId;
+    const content =
+      Object.entries(existingEnv)
+        .map(([k, v]) => `${k}=${v}`)
+        .join('\n') + '\n';
+    fs.writeFileSync(envPath, content, 'utf8');
+  } catch {
+    // Ignore persistence failures
+  }
+}
+
 // OAuth Login Flow
-export async function login(): Promise<void> {
+export async function login(cliClientId?: string): Promise<void> {
   console.log('Starting OAuth Login...\n');
 
-  const clientId = getClientId();
+  const clientId = getClientId(cliClientId);
   const oauthServerUrl = getOauthServerUrl();
   const oauthAuthorizeUrl = getOauthAuthorizeUrl();
   const mcpBaseUrl = getMcpBaseUrl();
@@ -155,6 +187,7 @@ export async function login(): Promise<void> {
     // Business logic outside try/catch to ensure expired can be thrown normally
     if (result.status === 'success' && result.token) {
       saveToken(result.token);
+      saveClientId(clientId);
       console.log('Login successful! Token saved.\n');
       console.log('Token Info:');
       if (result.token.access_token) {
