@@ -1,5 +1,6 @@
 
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -17,6 +18,46 @@ function findFileUpwards(startDir: string, filenames: string[]): string | null {
       const parent = path.dirname(dir);
       if (parent === dir) break;
       dir = parent;
+    }
+  } catch {}
+  return null;
+}
+
+// Cross-drive support: Scan user home directory for known AI Agent Skill directories
+function findFileInHomeSkillDirs(filenames: string[]): string | null {
+  try {
+    const homedir = os.homedir();
+    const baseDirs = [
+      path.join(homedir, '.hotel-global-cli'),
+      path.join(homedir, '.claude', 'skills'),
+      path.join(homedir, '.gemini', 'config', 'skills'),
+      path.join(homedir, '.gemini', 'skills'),
+      path.join(homedir, '.cursor', 'skills'),
+      path.join(homedir, '.openclaw', 'skills'),
+      path.join(homedir, '.agents', 'skills'),
+    ];
+
+    for (const base of baseDirs) {
+      if (!fs.existsSync(base)) continue;
+      for (const name of filenames) {
+        const direct = path.join(base, name);
+        if (fs.existsSync(direct) && fs.statSync(direct).isFile()) {
+          return direct;
+        }
+      }
+      try {
+        const subdirs = fs.readdirSync(base, { withFileTypes: true });
+        for (const sub of subdirs) {
+          if (sub.isDirectory()) {
+            for (const name of filenames) {
+              const subTarget = path.join(base, sub.name, name);
+              if (fs.existsSync(subTarget) && fs.statSync(subTarget).isFile()) {
+                return subTarget;
+              }
+            }
+          }
+        }
+      } catch {}
     }
   } catch {}
   return null;
@@ -62,11 +103,20 @@ export const getClientId = (cliOverride?: string): string => {
     } catch {}
   }
 
-  // Priority 3: Script directory search upwards
+  // Priority 3: Cross-drive support: Scan user home directory for AI skill client_id.txt / .client_id
+  const homeSkillFile = findFileInHomeSkillDirs(['client_id.txt', '.client_id']);
+  if (homeSkillFile) {
+    try {
+      const content = fs.readFileSync(homeSkillFile, 'utf8').trim();
+      if (content) return content;
+    } catch {}
+  }
+
+  // Priority 4: Script directory search upwards
   try {
     const scriptDir = path.dirname(fileURLToPath(import.meta.url));
     const scriptFile = findFileUpwards(scriptDir, ['client_id.txt', '.client_id']);
-    if (scriptFile && scriptFile !== cwdFile) {
+    if (scriptFile && scriptFile !== cwdFile && scriptFile !== homeSkillFile) {
       const content = fs.readFileSync(scriptFile, 'utf8').trim();
       if (content) return content;
     }
